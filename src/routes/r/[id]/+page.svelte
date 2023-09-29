@@ -2,6 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { base } from "$app/paths";
 	import { page } from "$app/stores";
+	import { PUBLIC_APP_DISCLAIMER } from "$env/static/public";
 	import ChatWindow from "$lib/components/chat/ChatWindow.svelte";
 	import { ERROR_MESSAGES, error } from "$lib/stores/errors";
 	import { pendingMessage } from "$lib/stores/pendingMessage";
@@ -24,6 +25,7 @@
 				},
 				body: JSON.stringify({
 					fromShare: $page.params.id,
+					model: data.model,
 				}),
 			});
 
@@ -58,6 +60,7 @@
 	{loading}
 	shared={true}
 	messages={data.messages}
+	searches={data.searches}
 	on:message={(ev) =>
 		createConversation()
 			.then((convId) => {
@@ -77,4 +80,8 @@
 	models={data.models}
 	currentModel={findCurrentModel(data.models, data.model)}
 	settings={data.settings}
+	loginRequired={!$page.error &&
+		(data.requiresLogin
+			? !data.user
+			: !data.settings.ethicsModalAcceptedAt && !!PUBLIC_APP_DISCLAIMER)}
 />

@@ -2,9 +2,11 @@ import { MONGODB_URL, MONGODB_DB_NAME, MONGODB_DIRECT_CONNECTION } from "$env/st
 import { MongoClient } from "mongodb";
 import type { Conversation } from "$lib/types/Conversation";
 import type { SharedConversation } from "$lib/types/SharedConversation";
+import type { WebSearch } from "$lib/types/WebSearch";
 import type { AbortedGeneration } from "$lib/types/AbortedGeneration";
 import type { Settings } from "$lib/types/Settings";
 import type { User } from "$lib/types/User";
+import type { MessageEvent } from "$lib/types/MessageEvent";
 
 if (!MONGODB_URL) {
 	throw new Error(
@@ -25,6 +27,8 @@ const sharedConversations = db.collection<SharedConversation>("sharedConversatio
 const abortedGenerations = db.collection<AbortedGeneration>("abortedGenerations");
 const settings = db.collection<Settings>("settings");
 const users = db.collection<User>("users");
+const webSearches = db.collection<WebSearch>("webSearches");
+const messageEvents = db.collection<MessageEvent>("messageEvents");
 
 export { client, db };
 export const collections = {
@@ -33,6 +37,8 @@ export const collections = {
 	abortedGenerations,
 	settings,
 	users,
+	webSearches,
+	messageEvents,
 };
 
 client.on("open", () => {
@@ -48,6 +54,7 @@ client.on("open", () => {
 			{ partialFilterExpression: { userId: { $exists: true } } }
 		)
 		.catch(console.error);
+	webSearches.createIndex({ sessionId: 1, updatedAt: -1 }).catch(console.error);
 	abortedGenerations.createIndex({ updatedAt: 1 }, { expireAfterSeconds: 30 }).catch(console.error);
 	abortedGenerations.createIndex({ conversationId: 1 }, { unique: true }).catch(console.error);
 	sharedConversations.createIndex({ hash: 1 }, { unique: true }).catch(console.error);
@@ -55,4 +62,5 @@ client.on("open", () => {
 	settings.createIndex({ userId: 1 }, { unique: true, sparse: true }).catch(console.error);
 	users.createIndex({ hfUserId: 1 }, { unique: true }).catch(console.error);
 	users.createIndex({ sessionId: 1 }, { unique: true, sparse: true }).catch(console.error);
+	messageEvents.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 }).catch(console.error);
 });
